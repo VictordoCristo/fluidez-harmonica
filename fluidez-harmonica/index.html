@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluidez Harmônica</title>
+    <style>
+        /* ==============================
+           VARIÁVEIS DE COR E ESTILO
+           ============================== */
+        :root {
+            --bg-color: #FDFBFA;
+            --primary-color: #A67B5B;
+            --primary-dark: #8A6347;
+            --accent-color: #D4AF37;
+            --text-dark: #2D2D2D;
+            --text-light: #7A7A7A;
+            --card-bg: #FFFFFF;
+            --success: #4CAF50;
+            --error: #E53935;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+
+        body {
+            background-color: #E9E9E9;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        #app-container {
+            width: 100%;
+            max-width: 414px;
+            height: 100vh;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow-y: auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ==============================
+           CABEÇALHO
+           ============================== */
+        header {
+            padding: 24px 20px 16px;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid #EAEAEA;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-greeting h1 { font-size: 20px; color: var(--text-dark); font-weight: 600; }
+        .user-greeting p { font-size: 14px; color: var(--text-light); margin-top: 4px; }
+
+        .streak {
+            display: flex; align-items: center; gap: 6px;
+            background-color: #FFF8E1; padding: 6px 12px;
+            border-radius: 20px; color: var(--primary-dark);
+            font-weight: bold; font-size: 14px;
+        }
+
+        /* ==============================
+           DASHBOARD
+           ============================== */
+        .content { padding: 20px; flex: 1; }
+
+        .card {
+            background-color: var(--card-bg); border-radius: 16px;
+            padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            margin-bottom: 20px;
+        }
+
+        .card h2 { font-size: 18px; color: var(--text-dark); margin-bottom: 8px; }
+
+        .card p { font-size: 14px; color: var(--text-light); line-height: 1.5; margin-bottom: 16px; }
+
+        .btn-primary {
+            display: block; width: 100%; padding: 16px;
+            background-color: var(--primary-color); color: white;
+            text-align: center; border: none; border-radius: 12px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary:hover { background-color: var(--primary-dark); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Insight da IA */
+        #ai-insight-card { display: none; }
+        #ai-insight-text { font-style: italic; color: var(--primary-dark); }
+
+        /* ==============================
+           TELA DO TREINADOR
+           ============================== */
+        #trainer-view {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+        }
+
+        .trainer-header { display: flex; align-items: center; margin-bottom: 30px; }
+
+        .btn-back {
+            background: none; border: none; font-size: 24px;
+            color: var(--text-dark); cursor: pointer; margin-right: 16px;
+        }
+
+        .question-box { text-align: center; margin-bottom: 40px; }
+
+        .context-tag {
+            display: inline-block; background-color: #F0F0F0;
+            padding: 6px 12px; border-radius: 8px;
+            font-size: 14px; color: var(--text-dark);
+            font-weight: 500; margin-bottom: 16px;
+        }
+
+        .question-text { font-size: 22px; color: var(--text-dark); font-weight: bold; line-height: 1.4; }
+
+        .highlight-degree {
+            color: var(--primary-color); font-size: 28px;
+            display: block; margin: 10px 0;
+        }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        .btn-option {
+            background-color: var(--card-bg); border: 2px solid #EAEAEA;
+            padding: 20px; border-radius: 12px; font-size: 20px;
+            font-weight: bold; color: var(--text-dark); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-option:hover:not(:disabled) { border-color: var(--primary-color); background-color: #FCF9F7; }
+        .btn-option.correct { background-color: var(--success); color: white; border-color: var(--success); }
+        .btn-option.wrong { background-color: var(--error); color: white; border-color: var(--error); }
+
+        .feedback-msg {
+            text-align: center; margin-top: 24px;
+            font-weight: bold; font-size: 16px; min-height: 24px;
+        }
+
+        /* Indicador de salvamento */
+        .save-indicator {
+            text-align: center; font-size: 12px;
+            color: var(--text-light); margin-top: 8px;
+            min-height: 16px; transition: opacity 0.3s;
+        }
+
+        /* ==============================
+           NAVEGAÇÃO INFERIOR
+           ============================== */
+        nav.bottom-nav {
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            background-color: var(--card-bg);
+            border-top: 1px solid #EAEAEA;
+            display: flex; justify-content: space-around;
+            padding: 12px 0 20px;
+        }
+
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            color: var(--text-light); text-decoration: none;
+            font-size: 12px; gap: 4px; cursor: pointer;
+            background: none; border: none;
+        }
+        .nav-item.active { color: var(--primary-color); }
+        .nav-icon { font-size: 20px; }
+    </style>
+</head>
+<body>
+<div id="app-container">
+
+    <!-- VIEW 1: DASHBOARD -->
+    <div id="dashboard-view">
+        <header>
+            <div class="user-greeting">
+                <h1>Olá, Ministro</h1>
+                <p>Pronto para fluir hoje?</p>
+            </div>
+            <div class="streak">🔥 <span id="streak-count">–</span> dias</div>
+        </header>
+
+        <div class="content">
+
+            <!-- Card de insight da IA (aparece após carregar) -->
+            <div class="card" id="ai-insight-card">
+                <h2>✨ Dica do Mestre</h2>
+                <p id="ai-insight-text">Carregando análise...</p>
+            </div>
+
+            <div class="card">
+                <h2>Treino de Hoje</h2>
+                <p>O foco de hoje é quebrar a dependência visual. Vamos trabalhar os graus e suas funções na ministração.</p>
+                <!-- ID adicionado para controle via JS -->
+                <button class="btn-primary" id="btn-start-training">Iniciar Laboratório</button>
+            </div>
+
+            <div class="card">
+                <h2>Seu Progresso</h2>
+                <p>Tons trabalhados na semana:</p>
+                <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                    <span style="background: var(--primary-color); color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">G</span>
+                    <span style="background: var(--primary-color); color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">D</span>
+                    <span style="background: #EAEAEA; color: var(--text-light); padding: 4px 12px; border-radius: 4px; font-weight: bold;">A</span>
+                    <span style="background: #EAEAEA; color: var(--text-light); padding: 4px 12px; border-radius: 4px; font-weight: bold;">E</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" id="nav-home">
+                <span class="nav-icon">🏠</span>
+                <span>Início</span>
+            </button>
+            <button class="nav-item" id="nav-train">
+                <span class="nav-icon">🎸</span>
+                <span>Treinar</span>
+            </button>
+            <button class="nav-item" id="nav-profile">
+                <span class="nav-icon">📊</span>
+                <span>Perfil</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- VIEW 2: TREINADOR (LABORATÓRIO) -->
+    <div id="trainer-view">
+        <div class="trainer-header">
+            <button class="btn-back" id="btn-back">←</button>
+            <h2 style="font-size: 18px; color: var(--text-dark);">Laboratório Harmônico</h2>
+        </div>
+
+        <div class="question-box">
+            <div class="context-tag" id="question-context">Tom: Sol Maior (G)</div>
+            <div class="question-text">
+                Qual é o acorde para a função de<br>
+                <span class="highlight-degree" id="question-function">Subdominante (IV)</span>
+            </div>
+        </div>
+
+        <div class="options-grid" id="options-container"></div>
+        <div class="feedback-msg" id="feedback"></div>
+        <div class="save-indicator" id="save-indicator"></div>
+    </div>
+
+</div>
+
+<!-- ============================================================
+     SCRIPT: type="module" é OBRIGATÓRIO para usar import/export
+     Todos os onclick foram removidos do HTML e registrados aqui
+     ============================================================ -->
+<script type="module">
+    // ── SUPABASE ─────────────────────────────────────────────
+    // Importação via CDN ESM (compatível com type="module")
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const SUPABASE_URL = 'https://ggfxfprffplpzqogsxkn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdnZnhmcHJmZnBscHpxb2dzeGtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5OTg2MTgsImV4cCI6MjA5MDU3NDYxOH0.acQx3EUuyy65QbbhGREIOxSDfulbbJIu_Bkl_gebuKQ';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // ── BANCO HARMÔNICO (tons do worship) ────────────────────
+    // Estrutura: cada tom contém nome e os 6 graus diatônicos
+    const harmonyData = {
+        'G': {
+            name: 'Sol Maior (G)',
+            chords: {
+                'I':  { chord: 'G',  func: 'Tônica' },
+                'ii': { chord: 'Am', func: 'Super Tônica' },
+                'iii':{ chord: 'Bm', func: 'Mediante' },
+                'IV': { chord: 'C',  func: 'Subdominante' },
+                'V':  { chord: 'D',  func: 'Dominante' },
+                'vi': { chord: 'Em', func: 'Relativa Menor' }
+            }
+        },
+        'D': {
+            name: 'Ré Maior (D)',
+            chords: {
+                'I':  { chord: 'D',  func: 'Tônica' },
+                'ii': { chord: 'Em', func: 'Super Tônica' },
+                'iii':{ chord: 'F#m',func: 'Mediante' },
+                'IV': { chord: 'G',  func: 'Subdominante' },
+                'V':  { chord: 'A',  func: 'Dominante' },
+                'vi': { chord: 'Bm', func: 'Relativa Menor' }
+            }
+        },
+        'C': {
+            name: 'Dó Maior (C)',
+            chords: {
+                'I':  { chord: 'C',  func: 'Tônica' },
+                'ii': { chord: 'Dm', func: 'Super Tônica' },
+                'iii':{ chord: 'Em', func: 'Mediante' },
+                'IV': { chord: 'F',  func: 'Subdominante' },
+                'V':  { chord: 'G',  func: 'Dominante' },
+                'vi': { chord: 'Am', func: 'Relativa Menor' }
+            }
+        },
+        'A': {
+            name: 'Lá Maior (A)',
+            chords: {
+                'I':  { chord: 'A',  func: 'Tônica' },
+                'ii': { chord: 'Bm', func: 'Super Tônica' },
+                'iii':{ chord: 'C#m',func: 'Mediante' },
+                'IV': { chord: 'D',  func: 'Subdominante' },
+                'V':  { chord: 'E',  func: 'Dominante' },
+                'vi': { chord: 'F#m',func: 'Relativa Menor' }
+            }
+        },
+        'E': {
+            name: 'Mi Maior (E)',
+            chords: {
+                'I':  { chord: 'E',  func: 'Tônica' },
+                'ii': { chord: 'F#m',func: 'Super Tônica' },
+                'iii':{ chord: 'G#m',func: 'Mediante' },
+                'IV': { chord: 'A',  func: 'Subdominante' },
+                'V':  { chord: 'B',  func: 'Dominante' },
+                'vi': { chord: 'C#m',func: 'Relativa Menor' }
+            }
+        }
+    };
+
+    // ── SESSÃO DE TREINO ─────────────────────────────────────
+    // Geração automática de questões a partir do harmonyData
+    // Evita hardcoding e facilita integração futura com IA
+    function generateSession(keyFilter = null, count = 5) {
+        const keys = keyFilter ? [keyFilter] : Object.keys(harmonyData);
+        const degrees = ['I', 'ii', 'iii', 'IV', 'V', 'vi'];
+        const questions = [];
+
+        for (let i = 0; i < count; i++) {
+            const key = keys[Math.floor(Math.random() * keys.length)];
+            const degree = degrees[Math.floor(Math.random() * degrees.length)];
+            const keyData = harmonyData[key];
+
+            // Gera 3 distratores plausíveis (outros acordes do mesmo tom)
+            const allChords = Object.values(keyData.chords).map(d => d.chord);
+            const correct = keyData.chords[degree].chord;
+            const distractors = allChords.filter(c => c !== correct)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3);
+
+            questions.push({
+                key,
+                degree,
+                options: shuffle([correct, ...distractors])
+            });
+        }
+        return questions;
+    }
+
+    function shuffle(arr) {
+        return arr.sort(() => Math.random() - 0.5);
+    }
+
+    // ── ESTADO DA APLICAÇÃO ──────────────────────────────────
+    let sessionQuestions = [];
+    let currentQuestionIndex = 0;
+    let questionStartTime = 0; // Para medir tempo de resposta real
+
+    // ── NAVEGAÇÃO ────────────────────────────────────────────
+    function startTraining() {
+        sessionQuestions = generateSession(null, 5);
+        currentQuestionIndex = 0;
+
+        document.getElementById('dashboard-view').style.display = 'none';
+        document.getElementById('trainer-view').style.display = 'flex';
+
+        loadQuestion();
+    }
+
+    function goBack() {
+        document.getElementById('trainer-view').style.display = 'none';
+        document.getElementById('dashboard-view').style.display = 'block';
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('save-indicator').innerText = '';
+
+        // Recarrega resumo do dia ao voltar ao dashboard
+        loadDailySummary();
+    }
+
+    // ── CARREGAMENTO DE QUESTÃO ──────────────────────────────
+    function loadQuestion() {
+        const q = sessionQuestions[currentQuestionIndex];
+        const keyData = harmonyData[q.key];
+        const answerData = keyData.chords[q.degree];
+
+        document.getElementById('question-context').innerText = `Tom: ${keyData.name}`;
+        document.getElementById('question-function').innerText = `${answerData.func} (${q.degree})`;
+        document.getElementById('feedback').innerText = '';
+        document.getElementById('save-indicator').innerText = '';
+
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+
+        q.options.forEach(option => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-option';
+            btn.innerText = option;
+            // addEventListener em vez de onclick — compatível com type="module"
+            btn.addEventListener('click', () => checkAnswer(btn, option, answerData.chord));
+            optionsContainer.appendChild(btn);
+        });
+
+        // Registra o momento em que a pergunta foi exibida
+        questionStartTime = Date.now();
+    }
+
+    // ── VALIDAÇÃO DA RESPOSTA ────────────────────────────────
+    async function checkAnswer(btnElement, selectedChord, correctChord) {
+        const tempoMs = Date.now() - questionStartTime;
+        const isCorrect = selectedChord === correctChord;
+        const q = sessionQuestions[currentQuestionIndex];
+
+        // Desativa todos para evitar duplo clique
+        document.querySelectorAll('.btn-option').forEach(b => b.disabled = true);
+
+        const feedback = document.getElementById('feedback');
+        const saveIndicator = document.getElementById('save-indicator');
+
+        if (isCorrect) {
+            btnElement.classList.add('correct');
+            feedback.style.color = 'var(--success)';
+            feedback.innerText = '✓ Exato! O cálculo mental está fluindo.';
+        } else {
+            btnElement.classList.add('wrong');
+            feedback.style.color = 'var(--error)';
+            // Indica o correto para o aluno internalizar
+            const funcName = document.getElementById('question-function').innerText.split(' (')[0];
+            feedback.innerText = `A ${funcName} de ${q.key} é ${correctChord}. Grave esse intervalo.`;
+        }
+
+        // ── SALVA NO SUPABASE ────────────────────────────────
+        // Usa "anonymous" como user_id temporário até implementar Auth
+        saveIndicator.innerText = 'Salvando progresso...';
+        const { error } = await supabase
+            .from('progresso_harmonico')
+            .insert([{
+                user_id: 'anonymous',   // Substituir por supabase.auth.getUser() após implementar Auth
+                tom: q.key,
+                grau_desejado: q.degree,
+                acerto: isCorrect,
+                tempo_resposta_ms: tempoMs
+            }]);
+
+        if (error) {
+            console.error('Erro ao salvar progresso:', error.message);
+            saveIndicator.innerText = '⚠ Erro ao salvar (modo offline)';
+        } else {
+            saveIndicator.innerText = isCorrect ? '✓ Progresso salvo' : '✓ Erro registrado para análise da IA';
+        }
+
+        // Avança após 1.8s
+        setTimeout(() => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < sessionQuestions.length) {
+                loadQuestion();
+            } else {
+                feedback.style.color = 'var(--primary-color)';
+                feedback.innerText = '🙌 Sessão concluída! Voltando ao Altar...';
+                saveIndicator.innerText = '';
+                setTimeout(goBack, 2000);
+            }
+        }, isCorrect ? 1500 : 2500); // Mais tempo no erro para o aluno memorizar
+    }
+
+    // ── RESUMO DO DIA (lê os erros recentes do Supabase) ─────
+    async function loadDailySummary() {
+        const insightCard = document.getElementById('ai-insight-card');
+        const insightText = document.getElementById('ai-insight-text');
+
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+
+        // Busca tentativas de hoje do usuário
+        const { data, error } = await supabase
+            .from('progresso_harmonico')
+            .select('tom, grau_desejado, acerto, tempo_resposta_ms')
+            .gte('created_at', hoje.toISOString())
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error || !data || data.length === 0) {
+            // Sem dados: esconde o card de insight
+            insightCard.style.display = 'none';
+            return;
+        }
+
+        // Identifica os graus com mais erros hoje
+        const erros = data.filter(r => !r.acerto);
+        insightCard.style.display = 'block';
+
+        if (erros.length === 0) {
+            insightText.innerText = `✅ Sessão limpa hoje! ${data.length} tentativas, zero erros. O cálculo mental está fluindo.`;
+            return;
+        }
+
+        // Agrupa erros por tom e grau
+        const mapa = {};
+        erros.forEach(e => {
+            const k = `${e.grau_desijado || e.grau_desejado} em ${e.tom}`;
+            mapa[k] = (mapa[k] || 0) + 1;
+        });
+        const topErro = Object.entries(mapa).sort((a, b) => b[1] - a[1])[0];
+
+        // Dica local enquanto a Netlify Function com IA não está pronta
+        insightText.innerText = `Foco: você errou ${topErro[1]}x o grau ${topErro[0]} hoje. Esse é o seu próximo campo a conquistar.`;
+    }
+
+    // ── STREAK: conta dias com atividade ────────────────────
+    async function loadStreak() {
+        const { data } = await supabase
+            .from('progresso_harmonico')
+            .select('created_at')
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (!data || data.length === 0) {
+            document.getElementById('streak-count').innerText = '0';
+            return;
+        }
+
+        // Conta dias únicos consecutivos a partir de hoje
+        const dias = [...new Set(data.map(r => r.created_at.slice(0, 10)))].sort().reverse();
+        let streak = 0;
+        let ref = new Date();
+        ref.setHours(0,0,0,0);
+
+        for (const dia of dias) {
+            const d = new Date(dia);
+            const diff = Math.round((ref - d) / 86400000);
+            if (diff <= streak + 1) {
+                streak++;
+                ref = d;
+            } else break;
+        }
+        document.getElementById('streak-count').innerText = streak;
+    }
+
+    // ── REGISTRO DE EVENTOS (sem onclick no HTML) ────────────
+    // Isso resolve o problema de escopo com type="module"
+    document.getElementById('btn-start-training').addEventListener('click', startTraining);
+    document.getElementById('btn-back').addEventListener('click', goBack);
+    document.getElementById('nav-train').addEventListener('click', startTraining);
+    document.getElementById('nav-home').addEventListener('click', () => {
+        document.getElementById('trainer-view').style.display = 'none';
+        document.getElementById('dashboard-view').style.display = 'block';
+    });
+
+    // ── INICIALIZAÇÃO ────────────────────────────────────────
+    loadDailySummary();
+    loadStreak();
+</script>
+</body>
+</html>
