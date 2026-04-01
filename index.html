@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluidez Harmônica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:            #FDFBF8;
+            --primary:       #A67B5B;
+            --primary-dark:  #8A6347;
+            --primary-light: #C9A882;
+            --accent:        #D4AF37;
+            --accent-warm:   #E8C96A;
+            --dark:          #1E1A17;
+            --mid:           #4A3F35;
+            --light:         #8A7E75;
+            --card:          #FFFFFF;
+            --border:        #EDE8E3;
+            --ok:            #4A9B6F;
+            --ok-bg:         #EDF7F1;
+            --err:           #C0392B;
+            --err-bg:        #FDF0EF;
+            --input-bg:      #F7F3EF;
+            --shadow-sm:     0 2px 8px rgba(166,123,91,0.08);
+            --shadow-md:     0 6px 24px rgba(166,123,91,0.12);
+            --shadow-lg:     0 16px 48px rgba(30,26,23,0.12);
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'DM Sans',sans-serif;background:#DDD8D2;display:flex;justify-content:center;align-items:center;min-height:100vh}
+        #app{width:100%;max-width:414px;height:100vh;background:var(--bg);position:relative;overflow:hidden;box-shadow:var(--shadow-lg);display:flex;flex-direction:column}
+
+        /* ── VIEWS ── */
+        .view{display:none;flex-direction:column;flex:1;overflow:hidden}
+        .view.active{display:flex}
+        .scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+
+        /* ── AUTH ── */
+        #auth-view{background:linear-gradient(160deg,#1E1A17 0%,#3D2E22 50%,#5C4033 100%);justify-content:flex-end}
+        .auth-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 32px 20px;text-align:center}
+        .auth-logo{font-family:'Lora',serif;font-size:13px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);margin-bottom:20px;opacity:.9}
+        .auth-title{font-family:'Lora',serif;font-size:38px;font-weight:600;color:#fff;line-height:1.15;margin-bottom:16px}
+        .auth-title em{font-style:italic;color:var(--accent-warm)}
+        .auth-subtitle{font-size:15px;color:rgba(255,255,255,.55);line-height:1.6;max-width:280px}
+        .music-ornament{font-size:52px;margin-bottom:24px;filter:drop-shadow(0 4px 12px rgba(212,175,55,.4));animation:float 3s ease-in-out infinite}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        .auth-card{background:var(--bg);border-radius:28px 28px 0 0;padding:32px 28px 40px;box-shadow:0 -8px 40px rgba(0,0,0,.2)}
+        .auth-tabs{display:flex;background:var(--input-bg);border-radius:12px;padding:4px;margin-bottom:28px}
+        .auth-tab{flex:1;padding:10px;text-align:center;font-size:14px;font-weight:600;color:var(--light);cursor:pointer;border-radius:10px;transition:all .25s;border:none;background:transparent}
+        .auth-tab.active{background:#fff;color:var(--primary-dark);box-shadow:var(--shadow-sm)}
+        .auth-panel{display:none}.auth-panel.active{display:block}
+        .form-group{margin-bottom:16px}
+        .form-label{display:block;font-size:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--mid);margin-bottom:8px}
+        .form-input{width:100%;padding:14px 16px;background:var(--input-bg);border:1.5px solid transparent;border-radius:12px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--dark);transition:all .2s;outline:none}
+        .form-input:focus{border-color:var(--primary);background:#fff;box-shadow:0 0 0 3px rgba(166,123,91,.12)}
+        .form-input::placeholder{color:var(--light)}
+        .auth-msg{margin-top:14px;padding:12px 16px;border-radius:10px;font-size:14px;font-weight:500;display:none;line-height:1.4}
+        .auth-msg.success{background:var(--ok-bg);color:var(--ok);display:block}
+        .auth-msg.error{background:var(--err-bg);color:var(--err);display:block}
+
+        /* ── BUTTONS ── */
+        .btn{display:block;width:100%;padding:16px;border:none;border-radius:14px;font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+        .btn:disabled{opacity:.6;cursor:not-allowed;transform:none!important}
+        .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;box-shadow:0 4px 16px rgba(138,99,71,.35)}
+        .btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(138,99,71,.45)}
+        .btn-gold{background:linear-gradient(135deg,var(--accent),#B8960C);color:#1E1A17;font-weight:700}
+        .btn-gold:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 16px rgba(212,175,55,.4)}
+        .btn-sm{padding:12px 16px;font-size:14px}
+        .btn-back{background:var(--card);border:1px solid var(--border);width:40px;height:40px;border-radius:12px;font-size:18px;color:var(--dark);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-sm);transition:all .2s;flex-shrink:0}
+        .btn-back:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .btn-logout{background:none;border:none;font-size:13px;color:rgba(255,255,255,.4);cursor:pointer;font-family:'DM Sans',sans-serif;padding:4px 8px;border-radius:8px;transition:color .2s}
+        .btn-logout:hover{color:rgba(255,255,255,.75)}
+
+        /* ── DASHBOARD ── */
+        #dashboard-view{background:var(--bg)}
+        .dash-header{padding:52px 24px 20px;background:linear-gradient(160deg,#2A1F17 0%,#3D2E22 100%);position:relative;overflow:hidden}
+        .dash-header::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:radial-gradient(circle,rgba(212,175,55,.15) 0%,transparent 70%);border-radius:50%}
+        .dash-header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
+        .user-greeting-label{font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:4px}
+        .user-greeting-name{font-family:'Lora',serif;font-size:24px;color:#fff;font-weight:600}
+        .user-email-small{font-size:12px;color:rgba(255,255,255,.4);margin-top:2px}
+        .streak-badge{display:flex;align-items:center;gap:5px;background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.3);padding:8px 14px;border-radius:20px;color:var(--accent-warm);font-weight:700;font-size:14px}
+        .mission-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px}
+        .mission-tag{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+        .mission-text{font-size:16px;color:rgba(255,255,255,.85);line-height:1.5;margin-bottom:16px;font-family:'Lora',serif}
+        .dash-content{padding:24px 20px 0}
+        .section-title{font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--light);margin-bottom:16px}
+        .card{background:var(--card);border-radius:16px;padding:20px;box-shadow:var(--shadow-sm);border:1px solid var(--border);margin-bottom:16px}
+        .card-title{font-family:'Lora',serif;font-size:17px;color:var(--dark);margin-bottom:8px;font-weight:600}
+        .card-text{font-size:14px;color:var(--light);line-height:1.6;margin-bottom:16px}
+        .stats-row{display:flex;gap:12px;margin-bottom:16px}
+        .stat-card{flex:1;background:var(--card);border-radius:14px;padding:16px;text-align:center;box-shadow:var(--shadow-sm);border:1px solid var(--border)}
+        .stat-number{font-family:'Lora',serif;font-size:28px;font-weight:600;color:var(--primary);line-height:1;margin-bottom:4px}
+        .stat-label{font-size:11px;color:var(--light);font-weight:500;letter-spacing:.3px}
+        .insight-card{background:linear-gradient(135deg,#2A1F17 0%,#3D2E22 100%);border-radius:16px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden}
+        .insight-card::before{content:'🎵';position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:48px;opacity:.08}
+        .insight-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+        .insight-text{font-family:'Lora',serif;font-size:15px;color:rgba(255,255,255,.85);line-height:1.6;font-style:italic}
+        .tones-grid{display:flex;gap:8px;flex-wrap:wrap}
+        .tone-chip{padding:6px 14px;border-radius:8px;font-weight:700;font-size:14px}
+        .tone-chip.mastered{background:var(--primary);color:#fff}
+        .tone-chip.locked{background:var(--input-bg);color:var(--light)}
+
+        /* ── BOTTOM NAV ── */
+        .bottom-nav{position:absolute;bottom:0;width:100%;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:10px 0 24px;z-index:100}
+        .nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px 16px;border-radius:12px;transition:all .2s}
+        .nav-icon{font-size:20px;line-height:1}
+        .nav-label{font-size:11px;font-weight:600;color:var(--light);letter-spacing:.3px}
+        .nav-item.active .nav-label{color:var(--primary)}
+        .nav-dot{width:4px;height:4px;background:var(--primary);border-radius:50%;opacity:0;transition:opacity .2s}
+        .nav-item.active .nav-dot{opacity:1}
+
+        /* ── TRILHA VIEW ── */
+        #trail-view{background:var(--bg)}
+        .trail-header{padding:52px 24px 24px;background:linear-gradient(160deg,#1E1A17,#3D2E22)}
+        .trail-header-title{font-family:'Lora',serif;font-size:26px;color:#fff;font-weight:600;margin-bottom:6px}
+        .trail-header-sub{font-size:14px;color:rgba(255,255,255,.5);line-height:1.5}
+        .trail-content{padding:24px 20px 100px}
+
+        /* Cards de módulo */
+        .module-card{border-radius:20px;margin-bottom:16px;overflow:hidden;position:relative;transition:transform .2s,box-shadow .2s}
+        .module-card.unlocked{background:var(--card);border:1.5px solid var(--border);box-shadow:var(--shadow-md);cursor:pointer}
+        .module-card.unlocked:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+        .module-card.in-progress{background:var(--card);border:2px solid var(--primary);box-shadow:0 6px 24px rgba(166,123,91,.2);cursor:pointer}
+        .module-card.in-progress:hover{transform:translateY(-2px)}
+        .module-card.locked{background:var(--input-bg);border:1.5px solid var(--border);opacity:.75}
+        .module-card.completed{background:linear-gradient(135deg,#EDF7F1,#D5EFE1);border:1.5px solid var(--ok)}
+
+        .module-card-inner{padding:20px}
+        .module-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:12px}
+        .module-number{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0}
+        .module-card.in-progress .module-number{background:var(--primary);color:#fff}
+        .module-card.unlocked .module-number{background:var(--input-bg);color:var(--mid)}
+        .module-card.locked .module-number{background:#E8E3DC;color:var(--light)}
+        .module-card.completed .module-number{background:var(--ok);color:#fff}
+        .module-info{flex:1}
+        .module-tag{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px}
+        .module-card.in-progress .module-tag{color:var(--primary)}
+        .module-card.locked .module-tag{color:var(--light)}
+        .module-card.completed .module-tag{color:var(--ok)}
+        .module-title{font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--dark);line-height:1.3}
+        .module-card.locked .module-title{color:var(--light)}
+        .module-desc{font-size:13px;color:var(--light);line-height:1.55;margin-bottom:14px}
+        .module-meta{display:flex;align-items:center;gap:10px}
+        .module-badge{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--light);font-weight:500}
+        .lock-icon{position:absolute;top:20px;right:20px;font-size:18px;opacity:.4}
+
+        /* Progress dentro do card */
+        .module-progress-wrap{background:var(--input-bg);border-radius:4px;height:4px;margin-top:14px;overflow:hidden}
+        .module-progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:4px;transition:width .5s ease}
+
+        /* Critério de desbloqueio */
+        .unlock-criteria{background:rgba(212,175,55,.08);border:1px solid rgba(212,175,55,.2);border-radius:10px;padding:10px 14px;margin-top:12px}
+        .unlock-criteria-text{font-size:12px;color:var(--mid);line-height:1.5}
+        .unlock-criteria-text strong{color:var(--primary)}
+
+        /* ── MÓDULO 1 — VIEW CONTEÚDO ── */
+        #module1-view{background:var(--bg)}
+        .m1-header{padding:52px 24px 32px;background:linear-gradient(160deg,#1E1A17,#2A1F17);position:relative;overflow:hidden}
+        .m1-header::after{content:'♭';position:absolute;right:-10px;bottom:-20px;font-size:160px;color:rgba(212,175,55,.06);font-family:'Lora',serif;line-height:1}
+        .m1-header-top{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+        .m1-badge{background:rgba(212,175,55,.15);border:1px solid rgba(212,175,55,.3);padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;color:var(--accent-warm);letter-spacing:1px;text-transform:uppercase}
+        .m1-title{font-family:'Lora',serif;font-size:28px;color:#fff;font-weight:600;line-height:1.2;margin-bottom:8px}
+        .m1-subtitle{font-size:14px;color:rgba(255,255,255,.5);line-height:1.6}
+        .m1-content{padding:28px 20px 120px}
+        .lesson-block{margin-bottom:32px}
+        .lesson-eyebrow{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary);margin-bottom:10px}
+        .lesson-heading{font-family:'Lora',serif;font-size:20px;font-weight:600;color:var(--dark);margin-bottom:12px;line-height:1.3}
+        .lesson-body{font-size:15px;color:var(--mid);line-height:1.75}
+        .lesson-body p{margin-bottom:14px}
+        .lesson-body p:last-child{margin-bottom:0}
+
+        /* Tabela harmônica ilustrada */
+        .harmony-table{background:linear-gradient(135deg,#2A1F17,#3D2E22);border-radius:16px;padding:20px;margin:20px 0}
+        .harmony-table-title{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+        .harmony-row{display:flex;gap:8px;justify-content:space-between}
+        .harmony-cell{flex:1;background:rgba(255,255,255,.07);border-radius:10px;padding:12px 6px;text-align:center;border:1px solid rgba(255,255,255,.06)}
+        .harmony-cell.tonica{background:rgba(166,123,91,.3);border-color:rgba(166,123,91,.4)}
+        .harmony-cell.subdominante{background:rgba(212,175,55,.15);border-color:rgba(212,175,55,.25)}
+        .harmony-cell.dominante{background:rgba(74,155,111,.15);border-color:rgba(74,155,111,.25)}
+        .harmony-cell-degree{font-size:11px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:4px}
+        .harmony-cell-chord{font-family:'Lora',serif;font-size:20px;font-weight:600;color:#fff}
+        .harmony-cell-func{font-size:10px;color:rgba(255,255,255,.4);margin-top:3px}
+
+        /* Callout gospel */
+        .gospel-callout{background:var(--input-bg);border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:16px 20px;margin:20px 0}
+        .gospel-callout-icon{font-size:20px;margin-bottom:8px}
+        .gospel-callout-text{font-size:14px;color:var(--mid);line-height:1.65;font-style:italic}
+
+        /* Divisor */
+        .lesson-divider{border:none;border-top:1px solid var(--border);margin:28px 0}
+
+        /* CTA fixo no bottom */
+        .m1-cta{position:absolute;bottom:0;width:100%;padding:16px 20px 32px;background:linear-gradient(to top,var(--bg) 80%,transparent);z-index:50}
+
+        /* ── TRAINER VIEW ── */
+        #trainer-view{background:var(--bg)}
+        .trainer-top{display:flex;align-items:center;gap:16px;padding:52px 20px 20px}
+        .trainer-title{font-family:'Lora',serif;font-size:18px;color:var(--dark);font-weight:600}
+        .trainer-scroll-inner{padding:0 20px 120px}
+        .progress-wrap{background:var(--input-bg);border-radius:4px;height:4px;margin-bottom:32px;overflow:hidden}
+        .progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:4px;transition:width .5s ease}
+        .context-tag{display:inline-block;background:var(--input-bg);padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;color:var(--mid);margin-bottom:20px;letter-spacing:.3px}
+        .question-area{text-align:center;margin-bottom:36px}
+        .question-label{font-size:14px;color:var(--light);margin-bottom:8px;font-weight:500}
+        .q-degree{font-family:'Lora',serif;font-size:36px;font-weight:600;color:var(--primary);margin-bottom:4px}
+        .q-function{font-size:15px;color:var(--mid);font-weight:500}
+        .options-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+        .btn-option{background:var(--card);border:2px solid var(--border);padding:22px 16px;border-radius:14px;font-family:'Lora',serif;font-size:24px;font-weight:600;color:var(--dark);cursor:pointer;transition:all .2s;box-shadow:var(--shadow-sm)}
+        .btn-option:hover:not(:disabled){border-color:var(--primary);background:#FCF9F7;transform:translateY(-2px);box-shadow:var(--shadow-md)}
+        .btn-option.correct{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+        .btn-option.wrong{background:var(--err-bg);border-color:var(--err);color:var(--err)}
+        .btn-option.reveal{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+
+        /* Feedback rico */
+        .feedback-area{min-height:80px;margin-bottom:16px}
+        .feedback-bubble{padding:16px 20px;border-radius:14px;font-size:14px;font-weight:500;line-height:1.6;display:none}
+        .feedback-bubble.visible{display:block}
+        .feedback-bubble.success{background:var(--ok-bg);color:var(--ok)}
+        .feedback-bubble.error{background:var(--err-bg);color:var(--err)}
+        .feedback-bubble.info{background:var(--input-bg);color:var(--mid)}
+        .feedback-ai-tag{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;opacity:.7}
+        .feedback-ai-text{font-family:'Lora',serif;font-style:italic;font-size:15px;line-height:1.65;margin-top:8px}
+
+        /* ── SPINNERS & UTILS ── */
+        .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;vertical-align:middle}
+        .spinner-dark{border-color:rgba(74,63,53,.2);border-top-color:var(--mid)}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+        .anim{animation:slideUp .35s ease both}
+        .d1{animation-delay:.05s}.d2{animation-delay:.1s}.d3{animation-delay:.15s}.d4{animation-delay:.2s}
+
+        /* Skeleton loading */
+        .skeleton{background:linear-gradient(90deg,var(--input-bg) 25%,var(--border) 50%,var(--input-bg) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+        /* ── MODAL CONCLUSÃO ── */
+        .modal-overlay{position:absolute;inset:0;background:rgba(30,26,23,.7);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+        .modal-box{background:var(--card);border-radius:24px;padding:32px 28px;width:100%;max-width:360px;text-align:center;box-shadow:var(--shadow-lg)}
+        .modal-emoji{font-size:56px;margin-bottom:16px}
+        .modal-title{font-family:'Lora',serif;font-size:24px;font-weight:600;color:var(--dark);margin-bottom:8px}
+        .modal-text{font-size:14px;color:var(--light);line-height:1.6;margin-bottom:24px}
+        .modal-stats{display:flex;gap:16px;justify-content:center;margin-bottom:24px}
+        .modal-stat{text-align:center}
+        .modal-stat-num{font-family:'Lora',serif;font-size:28px;font-weight:600;color:var(--primary)}
+        .modal-stat-label{font-size:12px;color:var(--light)}
+        .hidden{display:none!important}
+    </style>
+</head>
+<body>
+<div id="app">
+
+    <!-- ═══════════════════════════════════
+         VIEW 1: AUTH
+         ═══════════════════════════════════ -->
+    <div id="auth-view" class="view active">
+        <div class="auth-hero">
+            <div class="music-ornament">🎸</div>
+            <p class="auth-logo">Fluidez Harmônica</p>
+            <h1 class="auth-title">Da cifra<br>à <em>fluência</em></h1>
+            <p class="auth-subtitle">Desenvolva o cálculo mental harmônico para ministrar com liberdade</p>
+        </div>
+        <div class="auth-card">
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchTab('login')">Entrar</button>
+                <button class="auth-tab" onclick="switchTab('signup')">Criar Conta</button>
+            </div>
+            <div id="login-panel" class="auth-panel active">
+                <div class="form-group">
+                    <label class="form-label">E-mail</label>
+                    <input id="login-email" type="email" class="form-input" placeholder="seu@email.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Senha</label>
+                    <input id="login-password" type="password" class="form-input" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary" id="btn-login" onclick="handleLogin()">Entrar</button>
+                <div class="auth-msg" id="login-msg"></div>
+            </div>
+            <div id="signup-panel" class="auth-panel">
+                <div class="form-group">
+                    <label class="form-label">Nome</label>
+                    <input id="signup-name" type="text" class="form-input" placeholder="Como você quer ser chamado?">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">E-mail</label>
+                    <input id="signup-email" type="email" class="form-input" placeholder="seu@email.com">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Senha</label>
+                    <input id="signup-password" type="password" class="form-input" placeholder="Mínimo 6 caracteres">
+                </div>
+                <button class="btn btn-primary" id="btn-signup" onclick="handleSignup()">Começar a Jornada</button>
+                <div class="auth-msg" id="signup-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         VIEW 2: DASHBOARD
+         ═══════════════════════════════════ -->
+    <div id="dashboard-view" class="view">
+        <div class="scroll" style="padding-bottom:90px">
+            <div class="dash-header">
+                <div class="dash-header-top">
+                    <div>
+                        <p class="user-greeting-label">Bem-vindo de volta</p>
+                        <h1 class="user-greeting-name" id="dash-user-name">Ministro</h1>
+                        <p class="user-email-small" id="dash-user-email"></p>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+                        <div class="streak-badge">🔥 <span id="streak-count">0</span> dias</div>
+                        <button class="btn-logout" onclick="handleLogout()">Sair</button>
+                    </div>
+                </div>
+                <div class="mission-card anim">
+                    <p class="mission-tag">✦ Missão de Hoje</p>
+                    <p class="mission-text">Continue sua trilha de aprendizado. Cada grau dominado é uma corrente que se quebra.</p>
+                    <button class="btn btn-gold btn-sm" onclick="showView('trail')">Ver Trilha →</button>
+                </div>
+            </div>
+            <div class="dash-content">
+                <div class="stats-row anim d1">
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-total">0</div>
+                        <div class="stat-label">Tentativas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-accuracy">—</div>
+                        <div class="stat-label">Precisão</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-sessions">0</div>
+                        <div class="stat-label">Sessões</div>
+                    </div>
+                </div>
+                <div class="insight-card anim d2">
+                    <p class="insight-label">✦ Dica do Mestre</p>
+                    <p class="insight-text" id="ai-insight-text">Carregando sua dica personalizada...</p>
+                </div>
+                <p class="section-title">Progresso por tom</p>
+                <div class="card anim d3">
+                    <p class="card-title">Domínio Harmônico</p>
+                    <p class="card-text">Tons em que você domina o cálculo mental rápido:</p>
+                    <div class="tones-grid">
+                        <span class="tone-chip locked" id="chip-G">G</span>
+                        <span class="tone-chip locked" id="chip-D">D</span>
+                        <span class="tone-chip locked" id="chip-C">C</span>
+                        <span class="tone-chip locked" id="chip-A">A</span>
+                        <span class="tone-chip locked" id="chip-E">E</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <nav class="bottom-nav">
+            <div class="nav-item active" id="nav-home" onclick="navTo('dashboard',this)">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Início</span>
+                <div class="nav-dot"></div>
+            </div>
+            <div class="nav-item" id="nav-trail" onclick="navTo('trail',this)">
+                <span class="nav-icon">🗺️</span>
+                <span class="nav-label">Trilha</span>
+                <div class="nav-dot"></div>
+            </div>
+            <div class="nav-item" id="nav-lab" onclick="navTo('trainer',this)">
+                <span class="nav-icon">🎸</span>
+                <span class="nav-label">Treinar</span>
+                <div class="nav-dot"></div>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         VIEW 3: TRILHA
+         ═══════════════════════════════════ -->
+    <div id="trail-view" class="view">
+        <div class="scroll">
+            <div class="trail-header">
+                <button class="btn-back" onclick="showView('dashboard')" style="margin-bottom:16px">←</button>
+                <h2 class="trail-header-title">Trilha Harmônica</h2>
+                <p class="trail-header-sub">Sua jornada da cifra à fluência — passo a passo.</p>
+            </div>
+            <div class="trail-content" id="trail-content">
+                <!-- Renderizado via JS -->
+                <div style="text-align:center;padding:40px 0">
+                    <span class="spinner spinner-dark"></span>
+                    <p style="font-size:14px;color:var(--light);margin-top:12px">Carregando módulos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         VIEW 4: MÓDULO 1 — CONTEÚDO
+         ═══════════════════════════════════ -->
+    <div id="module1-view" class="view">
+        <div class="scroll" style="padding-bottom:100px">
+            <div class="m1-header">
+                <div class="m1-header-top">
+                    <button class="btn-back" onclick="showView('trail')">←</button>
+                    <span class="m1-badge">Módulo 1</span>
+                </div>
+                <h2 class="m1-title">Campo Harmônico<br>— O Mapa da Liberdade</h2>
+                <p class="m1-subtitle">Entenda a estrutura que liberta você da cifra para sempre.</p>
+            </div>
+
+            <div class="m1-content">
+
+                <!-- Bloco 1 -->
+                <div class="lesson-block">
+                    <p class="lesson-eyebrow">O Problema</p>
+                    <h3 class="lesson-heading">Por que você ainda depende da cifra?</h3>
+                    <div class="lesson-body">
+                        <p>Você sabe tocar. Sabe fazer os acordes, sabe acompanhar. Mas quando a ministração flui livre e o líder muda de tom sem avisar — você trava.</p>
+                        <p>Não é falta de prática. É falta de <strong>mapa</strong>. Sem entender o campo harmônico, você é um viajante sem GPS: sabe andar, mas não sabe onde está.</p>
+                    </div>
+                </div>
+
+                <hr class="lesson-divider">
+
+                <!-- Bloco 2 -->
+                <div class="lesson-block">
+                    <p class="lesson-eyebrow">O Conceito Central</p>
+                    <h3 class="lesson-heading">O que é campo harmônico?</h3>
+                    <div class="lesson-body">
+                        <p>Campo harmônico é o conjunto de <strong>7 acordes</strong> que pertencem naturalmente a um tom. Quando uma música está em Sol (G), ela usa esses acordes — e só esses.</p>
+                        <p>Pensa assim: cada tom é um time de futebol com 7 jogadores fixos. O que muda de tom para tom são os nomes dos jogadores. A função de cada um — atacante, meio-campo, zagueiro — é sempre a mesma.</p>
+                    </div>
+                </div>
+
+                <!-- Tabela visual de G Maior -->
+                <div class="harmony-table">
+                    <p class="harmony-table-title">✦ Campo Harmônico de Sol (G) — os 6 graus do worship</p>
+                    <div class="harmony-row">
+                        <div class="harmony-cell tonica">
+                            <div class="harmony-cell-degree">I</div>
+                            <div class="harmony-cell-chord">G</div>
+                            <div class="harmony-cell-func">Tônica</div>
+                        </div>
+                        <div class="harmony-cell">
+                            <div class="harmony-cell-degree">ii</div>
+                            <div class="harmony-cell-chord">Am</div>
+                            <div class="harmony-cell-func">S. Tônica</div>
+                        </div>
+                        <div class="harmony-cell">
+                            <div class="harmony-cell-degree">iii</div>
+                            <div class="harmony-cell-chord">Bm</div>
+                            <div class="harmony-cell-func">Mediante</div>
+                        </div>
+                        <div class="harmony-cell subdominante">
+                            <div class="harmony-cell-degree">IV</div>
+                            <div class="harmony-cell-chord">C</div>
+                            <div class="harmony-cell-func">Subdominante</div>
+                        </div>
+                        <div class="harmony-cell dominante">
+                            <div class="harmony-cell-degree">V</div>
+                            <div class="harmony-cell-chord">D</div>
+                            <div class="harmony-cell-func">Dominante</div>
+                        </div>
+                        <div class="harmony-cell">
+                            <div class="harmony-cell-degree">vi</div>
+                            <div class="harmony-cell-chord">Em</div>
+                            <div class="harmony-cell-func">Rel. Menor</div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="lesson-divider">
+
+                <!-- Bloco 3 -->
+                <div class="lesson-block">
+                    <p class="lesson-eyebrow">A Virada de Chave</p>
+                    <h3 class="lesson-heading">Graus, não nomes de acordes</h3>
+                    <div class="lesson-body">
+                        <p>Um músico que depende de cifra pensa: <em>"essa música usa G, C e D."</em></p>
+                        <p>Um músico livre pensa: <em>"essa música usa I, IV e V."</em></p>
+                        <p>A diferença? O segundo consegue tocar em <strong>qualquer tom</strong> sem pensar — porque a relação entre os graus nunca muda. I, IV e V em Sol é G, C, D. Em Ré é D, G, A. Em Dó é C, F, G.</p>
+                        <p>Você memoriza a <em>estrutura</em>, não as notas. Isso é o cálculo mental harmônico.</p>
+                    </div>
+                </div>
+
+                <div class="gospel-callout">
+                    <div class="gospel-callout-icon">🎙️</div>
+                    <p class="gospel-callout-text">"Oceans" (Hillsong) usa I → V → vi → IV — a progressão mais usada no worship moderno. Quando você souber isso, vai reconhecer ela em qualquer tom que o ministério estiver tocando.</p>
+                </div>
+
+                <hr class="lesson-divider">
+
+                <!-- Bloco 4 — O que vem a seguir -->
+                <div class="lesson-block">
+                    <p class="lesson-eyebrow">O Próximo Passo</p>
+                    <h3 class="lesson-heading">Agora é hora de treinar o cálculo</h3>
+                    <div class="lesson-body">
+                        <p>Teoria sem prática não vira fluência. No laboratório a seguir, você vai praticar os graus I, IV e V do tom G até que sua resposta seja <strong>automática</strong> — sem pensar.</p>
+                        <p>O critério para avançar ao Módulo 2: <strong>80% de acerto com menos de 3 segundos por resposta</strong>. Velocidade é tudo em uma ministração ao vivo.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- CTA fixo -->
+        <div class="m1-cta">
+            <button class="btn btn-primary" onclick="showView('trainer')">Iniciar Laboratório do Módulo 1 →</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         VIEW 5: TRAINER — Laboratório Rico
+         ═══════════════════════════════════ -->
+    <div id="trainer-view" class="view">
+        <div class="trainer-top">
+            <button class="btn-back" onclick="showView('trail')">←</button>
+            <h2 class="trainer-title">Laboratório — Módulo 1</h2>
+        </div>
+        <div class="scroll">
+            <div class="trainer-scroll-inner">
+                <div class="progress-wrap">
+                    <div class="progress-fill" id="progress-bar" style="width:0%"></div>
+                </div>
+                <div class="question-area" id="question-area">
+                    <div class="context-tag" id="question-context">Tom: Sol Maior (G)</div>
+                    <p class="question-label">Qual é o acorde para a função de</p>
+                    <p class="q-degree" id="q-degree">IV</p>
+                    <p class="q-function" id="q-function">Subdominante</p>
+                </div>
+                <div class="options-grid" id="options-container"></div>
+                <div class="feedback-area">
+                    <div class="feedback-bubble" id="feedback-bubble">
+                        <p class="feedback-ai-tag" id="feedback-tag"></p>
+                        <p id="feedback-simple"></p>
+                        <p class="feedback-ai-text" id="feedback-ai"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de conclusão de sessão -->
+        <div class="modal-overlay hidden" id="session-modal">
+            <div class="modal-box">
+                <div class="modal-emoji" id="modal-emoji">🎉</div>
+                <h3 class="modal-title" id="modal-title">Sessão Concluída!</h3>
+                <p class="modal-text" id="modal-text">Continue praticando para dominar este módulo.</p>
+                <div class="modal-stats">
+                    <div class="modal-stat">
+                        <div class="modal-stat-num" id="modal-acertos">0</div>
+                        <div class="modal-stat-label">Acertos</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="modal-stat-num" id="modal-precisao">0%</div>
+                        <div class="modal-stat-label">Precisão</div>
+                    </div>
+                </div>
+                <div id="modal-unlock-msg" class="hidden" style="background:var(--ok-bg);border-radius:12px;padding:14px;margin-bottom:20px;font-size:14px;color:var(--ok);font-weight:500;line-height:1.5">
+                    🔓 Módulo 2 desbloqueado! Continue na Trilha.
+                </div>
+                <button class="btn btn-primary" onclick="closeSessionModal()">Continuar →</button>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /#app -->
+
+<script type="module">
+import { createClient } from 'https://jspm.dev/@supabase/supabase-js';
+
+// ── CONFIG ──────────────────────────────────
+const SUPABASE_URL = 'https://ggfxfprffplpzqogsxkn.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdnZnhmcHJmZnBscHpxb2dzeGtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5OTg2MTgsImV4cCI6MjA5MDU3NDYxOH0.acQx3EUuyy65QbbhGREIOxSDfulbbJIu_Bkl_gebuKQ';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── ESTADO GLOBAL ────────────────────────────
+let currentUser        = null;
+let currentQIdx        = 0;
+let sessionCorrect     = 0;
+let sessionTotal       = 0;
+let questionStartTime  = null;
+let currentModuleStatus = []; // array de { modulo_id, status }
+
+// ── BANCO HARMÔNICO ──────────────────────────
+const harmonyData = {
+    G: { name:'Sol Maior (G)', chords:{
+        'I':  {chord:'G',  func:'Tônica'},
+        'ii': {chord:'Am', func:'Super Tônica'},
+        'iii':{chord:'Bm', func:'Mediante'},
+        'IV': {chord:'C',  func:'Subdominante'},
+        'V':  {chord:'D',  func:'Dominante'},
+        'vi': {chord:'Em', func:'Relativa Menor'}
+    }},
+    D: { name:'Ré Maior (D)', chords:{
+        'I':  {chord:'D',   func:'Tônica'},
+        'ii': {chord:'Em',  func:'Super Tônica'},
+        'iii':{chord:'F#m', func:'Mediante'},
+        'IV': {chord:'G',   func:'Subdominante'},
+        'V':  {chord:'A',   func:'Dominante'},
+        'vi': {chord:'Bm',  func:'Relativa Menor'}
+    }},
+    C: { name:'Dó Maior (C)', chords:{
+        'I':  {chord:'C',  func:'Tônica'},
+        'ii': {chord:'Dm', func:'Super Tônica'},
+        'iii':{chord:'Em', func:'Mediante'},
+        'IV': {chord:'F',  func:'Subdominante'},
+        'V':  {chord:'G',  func:'Dominante'},
+        'vi': {chord:'Am', func:'Relativa Menor'}
+    }},
+    A: { name:'Lá Maior (A)', chords:{
+        'I':  {chord:'A',   func:'Tônica'},
+        'ii': {chord:'Bm',  func:'Super Tônica'},
+        'iii':{chord:'C#m', func:'Mediante'},
+        'IV': {chord:'D',   func:'Subdominante'},
+        'V':  {chord:'E',   func:'Dominante'},
+        'vi': {chord:'F#m', func:'Relativa Menor'}
+    }},
+    E: { name:'Mi Maior (E)', chords:{
+        'I':  {chord:'E',   func:'Tônica'},
+        'ii': {chord:'F#m', func:'Super Tônica'},
+        'iii':{chord:'G#m', func:'Mediante'},
+        'IV': {chord:'A',   func:'Subdominante'},
+        'V':  {chord:'B',   func:'Dominante'},
+        'vi': {chord:'C#m', func:'Relativa Menor'}
+    }}
+};
+
+// Sessão do Módulo 1: foco em I, IV, V de G (10 questões)
+const sessionM1 = [
+    {key:'G',degree:'IV',  options:['C','D','Am','Em']},
+    {key:'G',degree:'V',   options:['D','C','G','Bm']},
+    {key:'G',degree:'I',   options:['G','D','C','Am']},
+    {key:'G',degree:'IV',  options:['C','Bm','D','Em']},
+    {key:'G',degree:'V',   options:['D','Am','C','G']},
+    {key:'G',degree:'I',   options:['G','Em','C','Bm']},
+    {key:'G',degree:'IV',  options:['C','G','D','Am']},
+    {key:'G',degree:'V',   options:['D','G','Em','C']},
+    {key:'G',degree:'vi',  options:['Em','Bm','C','Am']},
+    {key:'G',degree:'I',   options:['G','Am','D','Em']},
+];
+
+// ── NAVEGAÇÃO ────────────────────────────────
+window.showView = function(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(name + '-view').classList.add('active');
+    if (name === 'dashboard') loadDashboardData();
+    if (name === 'trail')     renderTrail();
+    if (name === 'trainer')   startSession();
+};
+
+window.navTo = function(name, el) {
+    document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    showView(name);
+};
+
+// ── AUTH TABS ────────────────────────────────
+window.switchTab = function(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.auth-panel').forEach(p => p.classList.remove('active'));
+    if (tab === 'login') {
+        document.querySelectorAll('.auth-tab')[0].classList.add('active');
+        document.getElementById('login-panel').classList.add('active');
+    } else {
+        document.querySelectorAll('.auth-tab')[1].classList.add('active');
+        document.getElementById('signup-panel').classList.add('active');
+    }
+};
+
+// ── AUTH LOGIN ───────────────────────────────
+window.handleLogin = async function() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass  = document.getElementById('login-password').value;
+    const btn   = document.getElementById('btn-login');
+    const msg   = document.getElementById('login-msg');
+    msg.className = 'auth-msg';
+    if (!email || !pass) { showMsg('login-msg','error','Preencha e-mail e senha.'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Entrando...';
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    btn.disabled = false; btn.textContent = 'Entrar';
+    if (error) { showMsg('login-msg','error', translateErr(error.message)); return; }
+    currentUser = data.user;
+    await onLogin();
+};
+
+// ── AUTH SIGNUP ──────────────────────────────
+window.handleSignup = async function() {
+    const name  = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim();
+    const pass  = document.getElementById('signup-password').value;
+    const btn   = document.getElementById('btn-signup');
+    if (!name || !email || !pass) { showMsg('signup-msg','error','Preencha todos os campos.'); return; }
+    if (pass.length < 6) { showMsg('signup-msg','error','Senha mínimo 6 caracteres.'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Criando conta...';
+    const { data, error } = await supabase.auth.signUp({ email, password: pass, options: { data: { full_name: name } } });
+    btn.disabled = false; btn.textContent = 'Começar a Jornada';
+    if (error) { showMsg('signup-msg','error', translateErr(error.message)); return; }
+    if (data.user && !data.session) { showMsg('signup-msg','success','✅ Confirme seu e-mail para ativar a conta!'); return; }
+    currentUser = data.user;
+    await onLogin();
+};
+
+window.handleLogout = async function() {
+    await supabase.auth.signOut();
+    currentUser = null;
+    showView('auth');
+};
+
+async function onLogin() {
+    const meta = currentUser.user_metadata || {};
+    const name = meta.full_name || currentUser.email.split('@')[0];
+    document.getElementById('dash-user-name').textContent  = name;
+    document.getElementById('dash-user-email').textContent = currentUser.email;
+    // Inicializa módulos do usuário se ainda não existirem
+    await supabase.rpc('inicializar_modulos_usuario', { p_user_id: currentUser.id });
+    showView('dashboard');
+}
+
+async function checkSession() {
+    const { data } = await supabase.auth.getSession();
+    if (data?.session?.user) {
+        currentUser = data.session.user;
+        await onLogin();
+    }
+}
+
+function showMsg(id, type, text) {
+    const el = document.getElementById(id);
+    el.className = 'auth-msg ' + type;
+    el.textContent = text;
+}
+
+function translateErr(m) {
+    if (m.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.';
+    if (m.includes('User already registered'))   return 'E-mail já cadastrado. Faça login.';
+    if (m.includes('Password should be'))        return 'Senha deve ter pelo menos 6 caracteres.';
+    if (m.includes('Email not confirmed'))       return 'Confirme seu e-mail antes de entrar.';
+    return m;
+}
+
+// ── DASHBOARD ────────────────────────────────
+async function loadDashboardData() {
+    if (!currentUser) return;
+    const { data } = await supabase
+        .from('progresso_harmonico')
+        .select('acerto,created_at,tom')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+    if (!data) return;
+    const total    = data.length;
+    const acertos  = data.filter(r => r.acerto).length;
+    const accuracy = total > 0 ? Math.round(acertos/total*100) + '%' : '—';
+    const dias     = new Set(data.map(r => r.created_at.slice(0,10)));
+
+    document.getElementById('stat-total').textContent    = total;
+    document.getElementById('stat-accuracy').textContent = accuracy;
+    document.getElementById('stat-sessions').textContent = dias.size;
+    document.getElementById('streak-count').textContent  = calcStreak(Array.from(dias));
+
+    // Tons dominados (>= 80% de acerto nas últimas 20 tentativas do tom)
+    ['G','D','C','A','E'].forEach(tom => {
+        const tomData = data.filter(r => r.tom === tom).slice(0,20);
+        if (tomData.length >= 10) {
+            const acc = tomData.filter(r => r.acerto).length / tomData.length;
+            const chip = document.getElementById('chip-'+tom);
+            if (chip) chip.className = acc >= 0.8 ? 'tone-chip mastered' : 'tone-chip locked';
+        }
+    });
+
+    loadAiInsight(data);
+}
+
+function calcStreak(dias) {
+    if (!dias.length) return 0;
+    const sorted = dias.sort().reverse();
+    let streak = 0;
+    let cursor = new Date();
+    for (const dia of sorted) {
+        if (dia === cursor.toISOString().slice(0,10)) {
+            streak++;
+            cursor.setDate(cursor.getDate() - 1);
+        } else break;
+    }
+    return streak;
+}
+
+async function loadAiInsight(data) {
+    const el = document.getElementById('ai-insight-text');
+    try {
+        const res = await fetch('/.netlify/functions/get-ai-insight', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ userId: currentUser.id })
+        });
+        if (res.ok) { const j = await res.json(); el.textContent = j.insight; return; }
+    } catch(_) {}
+    // Fallback
+    if (!data?.length) { el.textContent = 'Bem-vindo! Sua jornada começa agora. Cada grau dominado é uma corrente que se quebra.'; return; }
+    const erros = data.filter(r=>!r.acerto);
+    el.textContent = erros.length === 0
+        ? 'Excelente! Você não errou na última sessão. Hora de aumentar a velocidade.'
+        : 'Foque nos graus que ainda travam. A Subdominante (IV) e a Dominante (V) são os pilares — domine-as primeiro.';
+}
+
+// ── TRILHA ───────────────────────────────────
+const modulosInfo = [
+    {
+        id:1, ordem:1,
+        titulo:'Campo Harmônico — O Mapa da Liberdade',
+        desc:'O que é campo harmônico e por que ele liberta você da cifra para sempre.',
+        graus:'I · IV · V', tom:'G'
+    },
+    {
+        id:2, ordem:2,
+        titulo:'Os Três Pilares: I, IV e V',
+        desc:'Tônica, Subdominante e Dominante — os acordes que constroem 90% do worship.',
+        graus:'I · IV · V', tom:'G'
+    },
+    {
+        id:3, ordem:3,
+        titulo:'A Relativa Menor — O Peso Emocional',
+        desc:'O vi que dá profundidade emocional às músicas de louvor mais intensas.',
+        graus:'I · IV · V · vi', tom:'G'
+    }
+];
+
+async function renderTrail() {
+    if (!currentUser) return;
+    const container = document.getElementById('trail-content');
+    container.innerHTML = '<div style="text-align:center;padding:40px 0"><span class="spinner spinner-dark"></span></div>';
+
+    // Busca status dos módulos do usuário
+    const { data: progData } = await supabase
+        .from('progresso_modulos')
+        .select('modulo_id, status')
+        .eq('user_id', currentUser.id);
+
+    currentModuleStatus = progData || [];
+
+    // Busca precisão recente do usuário para exibir progresso
+    const { data: pratica } = await supabase
+        .from('progresso_harmonico')
+        .select('acerto, created_at')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+    const acertos20 = pratica ? pratica.filter(r=>r.acerto).length : 0;
+    const acc20pct  = pratica?.length ? Math.round(acertos20/pratica.length*100) : 0;
+
+    function getStatus(moduloId) {
+        const found = currentModuleStatus.find(m => m.modulo_id === moduloId);
+        return found?.status || 'bloqueado';
+    }
+
+    let html = '';
+    modulosInfo.forEach((mod, idx) => {
+        const status = getStatus(mod.id);
+        const isFirst = idx === 0;
+
+        let cardClass = 'module-card ';
+        let tagText   = '';
+        let tagClass  = 'module-tag';
+        let btnHtml   = '';
+        let lockHtml  = '';
+        let progressHtml = '';
+        let criterioHtml = '';
+
+        if (status === 'concluido') {
+            cardClass += 'completed';
+            tagText    = '✓ Concluído';
+            btnHtml    = `<button class="btn btn-sm" style="background:var(--ok-bg);color:var(--ok);border:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer" onclick="showView('module${mod.ordem}')">Revisar →</button>`;
+        } else if (status === 'em_progresso') {
+            cardClass += 'in-progress';
+            tagText    = '▶ Em andamento';
+            const pct  = Math.min(acc20pct, 100);
+            progressHtml = `
+                <div style="margin-top:14px">
+                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--light);margin-bottom:6px">
+                        <span>Precisão nas últimas 20 tentativas</span>
+                        <span style="font-weight:700;color:var(--primary)">${acc20pct}%</span>
+                    </div>
+                    <div class="module-progress-wrap">
+                        <div class="module-progress-fill" style="width:${pct}%"></div>
+                    </div>
+                </div>`;
+            criterioHtml = `
+                <div class="unlock-criteria">
+                    <p class="unlock-criteria-text">Para desbloquear o próximo módulo: <strong>80% de acerto</strong> com <strong>tempo médio abaixo de 3s</strong> nas últimas 20 tentativas.</p>
+                </div>`;
+            btnHtml = `<button class="btn btn-primary btn-sm" onclick="showView('module${mod.ordem}')">Estudar Conteúdo →</button>`;
+        } else {
+            cardClass += 'locked';
+            tagText    = '🔒 Bloqueado';
+            lockHtml   = '<div class="lock-icon">🔒</div>';
+            criterioHtml = `
+                <div class="unlock-criteria">
+                    <p class="unlock-criteria-text">Complete o módulo anterior com <strong>80% de precisão</strong> para desbloquear.</p>
+                </div>`;
+        }
+
+        html += `
+        <div class="${cardClass}">
+            ${lockHtml}
+            <div class="module-card-inner">
+                <div class="module-header">
+                    <div class="module-number">${mod.ordem}</div>
+                    <div class="module-info">
+                        <p class="${tagClass}" style="color:${status==='concluido'?'var(--ok)':status==='em_progresso'?'var(--primary)':'var(--light)'}">${tagText}</p>
+                        <p class="module-title">${mod.titulo}</p>
+                    </div>
+                </div>
+                <p class="module-desc">${mod.desc}</p>
+                <div class="module-meta">
+                    <span class="module-badge">🎸 Tom ${mod.tom}</span>
+                    <span class="module-badge">♩ ${mod.graus}</span>
+                </div>
+                ${progressHtml}
+                ${criterioHtml}
+                ${btnHtml ? `<div style="margin-top:16px">${btnHtml}</div>` : ''}
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+// ── TRAINER — LABORATÓRIO RICO ───────────────
+function startSession() {
+    currentQIdx     = 0;
+    sessionCorrect  = 0;
+    sessionTotal    = 0;
+    questionStartTime = Date.now();
+    document.getElementById('session-modal').classList.add('hidden');
+    updateProgressBar();
+    loadQuestion();
+}
+
+function loadQuestion() {
+    const q       = sessionM1[currentQIdx];
+    const keyData = harmonyData[q.key];
+    const answer  = keyData.chords[q.degree];
+
+    document.getElementById('question-context').textContent = `Tom: ${keyData.name}`;
+    document.getElementById('q-degree').textContent         = q.degree;
+    document.getElementById('q-function').textContent       = answer.func;
+
+    hideFeedback();
+    questionStartTime = Date.now();
+
+    // Renderiza opções embaralhadas
+    const container = document.getElementById('options-container');
+    container.innerHTML = '';
+    [...q.options].sort(() => Math.random() - 0.5).forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className   = 'btn-option';
+        btn.textContent = opt;
+        btn.onclick     = () => handleAnswer(btn, opt, answer.chord, q, answer.func);
+        container.appendChild(btn);
+    });
+}
+
+async function handleAnswer(btnEl, selected, correct, q, funcName) {
+    const elapsed   = Date.now() - questionStartTime;
+    const isCorrect = selected === correct;
+
+    document.querySelectorAll('.btn-option').forEach(b => b.disabled = true);
+    sessionTotal++;
+    if (isCorrect) sessionCorrect++;
+
+    if (isCorrect) {
+        btnEl.classList.add('correct');
+    } else {
+        btnEl.classList.add('wrong');
+        document.querySelectorAll('.btn-option').forEach(b => {
+            if (b.textContent === correct) b.classList.add('reveal');
+        });
+    }
+
+    // Feedback imediato (simples)
+    showFeedback(
+        isCorrect ? `✓ Certo! ${correct} é o ${q.degree} de ${q.key}.` : `✗ Era ${correct} — ${funcName} de ${q.key}.`,
+        isCorrect ? 'success' : 'error',
+        null,
+        true // loading AI
+    );
+
+    // Salva no Supabase
+    if (currentUser) {
+        supabase.from('progresso_harmonico').insert([{
+            user_id:           currentUser.id,
+            tom:               q.key,
+            grau_desejado:     q.degree,
+            acerto:            isCorrect,
+            tempo_resposta_ms: elapsed
+        }]).then(() => {
+            // Após salvar, verifica critério de desbloqueio
+            checkUnlockCriteria();
+        });
+    }
+
+    // Busca feedback rico da IA (assíncrono)
+    fetchAiFeedback(q.key, q.degree, correct, selected, isCorrect);
+
+    // Avança questão
+    setTimeout(() => {
+        currentQIdx++;
+        updateProgressBar();
+        if (currentQIdx < sessionM1.length) {
+            loadQuestion();
+        } else {
+            showSessionModal();
+        }
+    }, isCorrect ? 2200 : 3200);
+}
+
+async function fetchAiFeedback(tom, grau, acorde_correto, acorde_errado, acertou) {
+    try {
+        const res = await fetch('/.netlify/functions/get-feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tom, grau, acorde_correto, acorde_errado, acertou })
+        });
+        if (!res.ok) return;
+        const { feedback } = await res.json();
+        if (feedback) updateAiFeedback(feedback, acertou);
+    } catch(_) {
+        // Silently fails — feedback simples já foi exibido
+    }
+}
+
+function updateAiFeedback(aiText, isCorrect) {
+    document.getElementById('feedback-tag').textContent = '✦ Mestre Harmônico';
+    document.getElementById('feedback-ai').textContent  = aiText;
+    const bubble = document.getElementById('feedback-bubble');
+    bubble.className = `feedback-bubble visible ${isCorrect ? 'success' : 'error'}`;
+}
+
+function showFeedback(simpleText, type, aiText, loading) {
+    document.getElementById('feedback-simple').textContent = simpleText;
+    document.getElementById('feedback-ai').textContent     = loading ? '' : (aiText || '');
+    document.getElementById('feedback-tag').textContent    = loading ? '' : (aiText ? '✦ Mestre Harmônico' : '');
+    const bubble = document.getElementById('feedback-bubble');
+    bubble.className = `feedback-bubble visible ${type}`;
+}
+
+function hideFeedback() {
+    const b = document.getElementById('feedback-bubble');
+    b.className = 'feedback-bubble';
+    document.getElementById('feedback-simple').textContent = '';
+    document.getElementById('feedback-ai').textContent     = '';
+    document.getElementById('feedback-tag').textContent    = '';
+}
+
+function updateProgressBar() {
+    const pct = (currentQIdx / sessionM1.length) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+// ── MODAL DE CONCLUSÃO ───────────────────────
+async function showSessionModal() {
+    const pct = Math.round(sessionCorrect/sessionTotal*100);
+    document.getElementById('modal-acertos').textContent  = `${sessionCorrect}/${sessionTotal}`;
+    document.getElementById('modal-precisao').textContent = `${pct}%`;
+
+    const unlocked = await checkUnlockCriteria();
+    if (pct >= 80) {
+        document.getElementById('modal-emoji').textContent = '🏆';
+        document.getElementById('modal-title').textContent = 'Sessão Excelente!';
+        document.getElementById('modal-text').textContent  = 'Sua precisão está alta. Continue praticando para atingir a velocidade necessária.';
+    } else {
+        document.getElementById('modal-emoji').textContent = '💪';
+        document.getElementById('modal-title').textContent = 'Sessão Concluída!';
+        document.getElementById('modal-text').textContent  = 'Cada tentativa constrói o cálculo mental. Continue praticando!';
+    }
+
+    const unlockMsg = document.getElementById('modal-unlock-msg');
+    if (unlocked) {
+        unlockMsg.classList.remove('hidden');
+    } else {
+        unlockMsg.classList.add('hidden');
+    }
+
+    document.getElementById('session-modal').classList.remove('hidden');
+}
+
+window.closeSessionModal = function() {
+    document.getElementById('session-modal').classList.add('hidden');
+    showView('trail');
+};
+
+// ── LÓGICA DE DESBLOQUEIO ────────────────────
+async function checkUnlockCriteria() {
+    if (!currentUser) return false;
+
+    // Busca as últimas 20 tentativas do usuário no módulo 1 (tom G)
+    const { data } = await supabase
+        .from('progresso_harmonico')
+        .select('acerto, tempo_resposta_ms')
+        .eq('user_id', currentUser.id)
+        .eq('tom', 'G')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+    if (!data || data.length < 20) return false;
+
+    const acertos  = data.filter(r => r.acerto).length;
+    const pct      = acertos / data.length;
+    const tempos   = data.filter(r => r.tempo_resposta_ms > 0).map(r => r.tempo_resposta_ms);
+    const avgTempo = tempos.length ? tempos.reduce((a,b)=>a+b,0)/tempos.length : 9999;
+
+    const aprovado = pct >= 0.80 && avgTempo <= 3000;
+
+    if (aprovado) {
+        // Verifica se módulo 1 já está concluído
+        const { data: mod1 } = await supabase
+            .from('progresso_modulos')
+            .select('status')
+            .eq('user_id', currentUser.id)
+            .eq('modulo_id', 1)
+            .single();
+
+        if (mod1?.status !== 'concluido') {
+            // Marca módulo 1 como concluído
+            await supabase.from('progresso_modulos').upsert({
+                user_id:     currentUser.id,
+                modulo_id:   1,
+                status:      'concluido',
+                concluido_em: new Date().toISOString()
+            }, { onConflict: 'user_id,modulo_id' });
+
+            // Desbloqueia módulo 2
+            await supabase.from('progresso_modulos').upsert({
+                user_id:          currentUser.id,
+                modulo_id:        2,
+                status:           'em_progresso',
+                desbloqueado_em:  new Date().toISOString()
+            }, { onConflict: 'user_id,modulo_id' });
+
+            return true; // desbloqueou!
+        }
+    }
+    return false;
+}
+
+// ── INIT ─────────────────────────────────────
+checkSession();
+</script>
+</body>
+</html>
